@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  CUSTOMER
+}
+
+enum RentalStatus {
+  PENDING
+  APPROVED
+  RETURNED
+  CANCELLED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  rentals   Rental[]
+}
+
+model Equipment {
+  id        Int          @id @default(autoincrement())
+  code      String       @unique
+  name      String
+  priceDay  Float
+  stock     Int          @default(0)
+  createdAt DateTime     @default(now())
+  items     RentalItem[]
+}
+
+model Rental {
+  id          Int          @id @default(autoincrement())
+  rentalNo    String       @unique
+  userId      Int
+  totalAmount Float
+  status      RentalStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  user        User         @relation(fields: [userId], references: [id])
+  items       RentalItem[]
+}
+
+model RentalItem {
+  id          Int       @id @default(autoincrement())
+  rentalId    Int
+  equipmentId Int
+  quantity    Int
+  days        Int
+  priceDay    Float
+  rental      Rental    @relation(fields: [rentalId], references: [id])
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+}
