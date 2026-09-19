@@ -1,82 +1,156 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
+    setMessage("");
     setError("");
 
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    if (res.ok) {
-      alert("สมัครสมาชิกสำเร็จ!");
-      router.push("/login");
-    } else {
-      const data = await res.json();
-      setError(data.message || "เกิดข้อผิดพลาดในการสมัครสมาชิก");
+    if (!name || !email || !password || !confirmPassword) {
+      setError("กรุณากรอกข้อมูลให้ครบ");
+      return;
     }
-  };
+
+    if (password.length < 8) {
+      setError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("รหัสผ่านไม่ตรงกัน");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "เกิดข้อผิดพลาดในการสมัครสมาชิก");
+        return;
+      }
+
+      setMessage("สมัครสมาชิกสำเร็จ! กำลังนำคุณไปหน้าเข้าสู่ระบบ...");
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
+    } catch {
+      setError("ไม่สามารถเชื่อมต่อกับระบบได้");
+    }
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-md">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-800">
-          สมัครสมาชิก (Register)
-        </h1>
-        {error && (
-          <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">ชื่อ-นามสกุล</label>
-            <input
-              type="text"
-              required
-              className="mt-1 w-full rounded border p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              required
-              className="mt-1 w-full rounded border p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <input
-              type="password"
-              required
-              className="mt-1 w-full rounded border p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full rounded bg-green-600 py-2 text-white hover:bg-green-700"
-          >
-            สมัครสมาชิก
-          </button>
-        </form>
-      </div>
-    </div>
+    <main
+      style={{
+        maxWidth: "400px",
+        margin: "50px auto",
+      }}
+    >
+      <h1>สมัครสมาชิก</h1>
+
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>ชื่อ</label>
+          <br />
+          <input
+            suppressHydrationWarning
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="กรอกชื่อ"
+            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+          />
+        </div>
+
+        <br />
+
+        <div>
+          <label>Email</label>
+          <br />
+          <input
+            suppressHydrationWarning
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@email.com"
+            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+          />
+        </div>
+
+        <br />
+
+        <div>
+          <label>Password</label>
+          <br />
+          <input
+            suppressHydrationWarning
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="อย่างน้อย 8 ตัวอักษร"
+            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+          />
+        </div>
+
+        <br />
+
+        <div>
+          <label>Confirm Password</label>
+          <br />
+          <input
+            suppressHydrationWarning
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="กรอกรหัสผ่านอีกครั้ง"
+            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+          />
+        </div>
+
+        <br />
+
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        {message && <p style={{ color: "green" }}>{message}</p>}
+
+        <button
+          type="submit"
+          style={{
+            width: "100%",
+            padding: "10px",
+            backgroundColor: "#2563eb",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          สมัครสมาชิก
+        </button>
+      </form>
+
+      <br />
+
+      <Link href="/login">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</Link>
+    </main>
   );
 }
