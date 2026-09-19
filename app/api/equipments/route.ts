@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { EquipmentSchema } from "@/lib/schemas/equipment";
 
 export async function GET() {
   try {
@@ -19,35 +18,28 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
-    const validation = EquipmentSchema.safeParse(body);
-    if (!validation.success) {
+    const { code, name, priceDay, stock } = body;
+
+    if (!code || !name || !priceDay || stock === undefined) {
       return NextResponse.json(
-        { message: "ข้อมูลไม่ถูกต้อง", errors: validation.error.format() },
+        { message: "กรุณากรอกข้อมูลให้ครบถ้วน" },
         { status: 400 }
       );
     }
 
-    const { code, name, priceDay, stock } = validation.data;
-
-    const existing = await prisma.equipment.findUnique({
-      where: { code },
-    });
-    if (existing) {
-      return NextResponse.json(
-        { message: "รหัสอุปกรณ์นี้มีในระบบแล้ว" },
-        { status: 400 }
-      );
-    }
-
-    const newEquipment = await prisma.equipment.create({
-      data: { code, name, priceDay, stock },
+    const equipment = await prisma.equipment.create({
+      data: {
+        code,
+        name,
+        priceDay: Number(priceDay),
+        stock: Number(stock),
+      },
     });
 
-    return NextResponse.json(newEquipment, { status: 201 });
+    return NextResponse.json(equipment, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล", error: String(error) },
+      { message: "เกิดข้อผิดพลาดในการสร้างอุปกรณ์", error: String(error) },
       { status: 500 }
     );
   }

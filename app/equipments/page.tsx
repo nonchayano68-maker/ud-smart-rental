@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, FormEvent } from "react";
+import Link from "next/link";
 
 interface Equipment {
-  id: number;
+  id: string;
   code: string;
   name: string;
   priceDay: number;
@@ -13,57 +14,36 @@ interface Equipment {
 export default function EquipmentsPage() {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [priceDay, setPriceDay] = useState("");
   const [stock, setStock] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
-  const fetchEquipments = async () => {
-    try {
-      const res = await fetch("/api/equipments");
-      const data = await res.json();
-      if (res.ok) {
-        setEquipments(data);
-      } else {
-        setError(data.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const getData = async () => {
+    async function fetchData() {
       try {
         const res = await fetch("/api/equipments");
-        const data = await res.json();
         if (res.ok) {
+          const data = await res.json();
           setEquipments(data);
-        } else {
-          setError(data.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
         }
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        }
+        console.error("Error fetching equipments:", err);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    getData();
+    fetchData();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
+    setMessage("");
     setError("");
 
     try {
@@ -81,124 +61,122 @@ export default function EquipmentsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-      }
+        setError(data.message || "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์");
+      } else {
+        setMessage("เพิ่มอุปกรณ์สำเร็จ!");
+        setCode("");
+        setName("");
+        setPriceDay("");
+        setStock("");
 
-      alert("เพิ่มอุปกรณ์สำเร็จ!");
-      setCode("");
-      setName("");
-      setPriceDay("");
-      setStock("");
-      fetchEquipments();
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
+        const updatedRes = await fetch("/api/equipments");
+        if (updatedRes.ok) {
+          const updatedData = await updatedRes.json();
+          setEquipments(updatedData);
+        }
       }
-    } finally {
-      setSubmitting(false);
+    } catch (err) {
+      console.error(err);
+      setError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <h1 className="text-3xl font-bold text-gray-800">จัดการอุปกรณ์ (Equipment Management)</h1>
+    <div style={{ maxWidth: "800px", margin: "40px auto", padding: "0 20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h1>จัดการอุปกรณ์</h1>
+        <Link href="/dashboard">← กลับหน้า Dashboard</Link>
+      </div>
 
-      {error && (
-        <div className="p-4 bg-red-100 text-red-700 rounded-md">{error}</div>
-      )}
-
-      <div className="bg-white p-6 rounded-lg shadow-md border">
-        <h2 className="text-xl font-semibold mb-4 text-gray-700">เพิ่มอุปกรณ์ใหม่</h2>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">รหัสอุปกรณ์ (Code)</label>
+      <section style={{ background: "#f5f5f5", padding: "20px", borderRadius: "8px", margin: "20px 0" }}>
+        <h2>เพิ่มอุปกรณ์ใหม่</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "10px" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>รหัสอุปกรณ์ (Code)</label>
             <input
               type="text"
-              required
-              className="w-full border rounded-md p-2 text-gray-900"
-              placeholder="EQ001"
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              placeholder="เช่น EQ001"
+              required
+              style={{ width: "100%", padding: "8px" }}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ชื่ออุปกรณ์</label>
+
+          <div style={{ marginBottom: "10px" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>ชื่ออุปกรณ์</label>
             <input
               type="text"
-              required
-              className="w-full border rounded-md p-2 text-gray-900"
-              placeholder="กล้อง Canon EOS R6"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="เช่น โน๊ตบุ๊ค Dell"
+              required
+              style={{ width: "100%", padding: "8px" }}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ราคาเช่าต่อวัน (บาท)</label>
+
+          <div style={{ marginBottom: "10px" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>ราคาเช่า / วัน (บาท)</label>
             <input
               type="number"
-              required
-              min="1"
-              className="w-full border rounded-md p-2 text-gray-900"
-              placeholder="500"
               value={priceDay}
               onChange={(e) => setPriceDay(e.target.value)}
+              placeholder="เช่น 300"
+              required
+              style={{ width: "100%", padding: "8px" }}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนคงเหลือ (Stock)</label>
+
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>จำนวนคงเหลือ (Stock)</label>
             <input
               type="number"
-              required
-              min="0"
-              className="w-full border rounded-md p-2 text-gray-900"
-              placeholder="5"
               value={stock}
               onChange={(e) => setStock(e.target.value)}
+              placeholder="เช่น 5"
+              required
+              style={{ width: "100%", padding: "8px" }}
             />
           </div>
-          <div className="md:col-span-2">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition duration-200 disabled:opacity-50"
-            >
-              {submitting ? "กำลังบันทึก..." : "บันทึกอุปกรณ์"}
-            </button>
-          </div>
-        </form>
-      </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md border">
-        <h2 className="text-xl font-semibold mb-4 text-gray-700">รายการอุปกรณ์ทั้งหมด</h2>
+          {error && <p style={{ color: "red" }}>{error}</p>}
+          {message && <p style={{ color: "green" }}>{message}</p>}
+
+          <button type="submit" style={{ padding: "10px 20px", cursor: "pointer" }}>
+            บันทึกอุปกรณ์
+          </button>
+        </form>
+      </section>
+
+      <section>
+        <h2>รายการอุปกรณ์ในระบบ</h2>
         {loading ? (
-          <p className="text-gray-500 text-center py-4">กำลังโหลดข้อมูล...</p>
+          <p>กำลังโหลดข้อมูล...</p>
         ) : equipments.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">ยังไม่มีรายการอุปกรณ์</p>
+          <p>ยังไม่มีข้อมูลอุปกรณ์</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-100 border-b">
-                  <th className="p-3 font-semibold text-gray-700">รหัส</th>
-                  <th className="p-3 font-semibold text-gray-700">ชื่ออุปกรณ์</th>
-                  <th className="p-3 font-semibold text-gray-700">ราคา/วัน</th>
-                  <th className="p-3 font-semibold text-gray-700">จำนวนคงเหลือ</th>
+          <table border={1} cellPadding={10} style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#eee" }}>
+                <th>รหัส</th>
+                <th>ชื่ออุปกรณ์</th>
+                <th>ราคา/วัน</th>
+                <th>จำนวนคงเหลือ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {equipments.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.code}</td>
+                  <td>{item.name}</td>
+                  <td>{item.priceDay} บาท</td>
+                  <td>{item.stock} ชิ้น</td>
                 </tr>
-              </thead>
-              <tbody>
-                {equipments.map((item) => (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-mono text-gray-800">{item.code}</td>
-                    <td className="p-3 text-gray-800">{item.name}</td>
-                    <td className="p-3 text-gray-800">{item.priceDay} บาท</td>
-                    <td className="p-3 text-gray-800">{item.stock} ชิ้น</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         )}
-      </div>
+      </section>
     </div>
   );
 }
