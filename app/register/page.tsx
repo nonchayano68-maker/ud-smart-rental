@@ -41,7 +41,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // เรียก API Register ตามโจทย์ข้อ 13
+      // เรียก API Register ตามข้อ 13
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
