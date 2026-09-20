@@ -19,11 +19,26 @@ export default function LoginPage() {
       return;
     }
 
-    // เช็กอีเมลและรหัสผ่านตามโจทย์ข้อ 8
     const validEmails = ["admin@test.com", "staff@test.com", "customer@test.com"];
 
     if (validEmails.includes(email) && password === "12345678") {
-      // เมื่อผ่านให้นำส่งไปหน้า Dashboard ทันที
+      let role = "CUSTOMER";
+      let name = "Somchai Customer";
+
+      if (email === "admin@test.com") {
+        role = "ADMIN";
+        name = "Somchai Admin";
+      } else if (email === "staff@test.com") {
+        role = "STAFF";
+        name = "Somchai Staff";
+      }
+
+      localStorage.setItem("token", "mock-token-123456");
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ id: 1, name, email, role })
+      );
+
       router.push("/dashboard");
     } else {
       setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
@@ -31,7 +46,10 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: "400px", margin: "50px auto", padding: "20px" }}>
+    <main
+      style={{ maxWidth: "400px", margin: "50px auto", padding: "20px" }}
+      suppressHydrationWarning
+    >
       <h1>UD Smart Rental - เข้าสู่ระบบ</h1>
 
       {error && (
@@ -40,7 +58,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} suppressHydrationWarning>
         <div>
           <label>Email</label>
           <br />
@@ -49,6 +67,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            suppressHydrationWarning
           />
         </div>
 
@@ -62,6 +81,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            suppressHydrationWarning
           />
         </div>
 
