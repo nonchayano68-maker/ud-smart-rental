@@ -2,10 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,19 +18,19 @@ export default function RegisterPage() {
     setMessage("");
     setError("");
 
-    // กรณีที่ 1: ไม่กรอกข้อมูล
+    // กรณีที่ 1: เช็กฟิลด์ว่าง
     if (!name || !email || !password || !confirmPassword) {
       setError("กรุณากรอกข้อมูลให้ครบ");
       return;
     }
 
-    // กรณีที่ 2: Password น้อยกว่า 8 ตัว
+    // กรณีที่ 2: เช็กรหัสผ่านน้อยกว่า 8 ตัว
     if (password.length < 8) {
       setError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
       return;
     }
 
-    // กรณีที่ 3: Password กับ Confirm Password ไม่ตรงกัน
+    // กรณีที่ 3: เช็กรหัสผ่านไม่ตรงกัน
     if (password !== confirmPassword) {
       setError("รหัสผ่านไม่ตรงกัน");
       return;
@@ -40,31 +38,6 @@ export default function RegisterPage() {
 
     // กรณีที่ 4: ข้อมูลถูกต้องทั้งหมด
     setMessage("ข้อมูลถูกต้อง สามารถส่งไปยัง API ได้แล้ว");
-
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || data.message || "เกิดข้อผิดพลาดในการสมัครสมาชิก");
-        setMessage("");
-        return;
-      }
-
-      setMessage("สมัครสมาชิกสำเร็จ! กำลังนำคุณไปหน้าเข้าสู่ระบบ...");
-
-      setTimeout(() => {
-        router.push("/login");
-      }, 1500);
-    } catch {
-      // หาก API Server Error ให้คงข้อความกรณีที่ 4 ตามโจทย์ไว้เพื่อทดสอบ Validation ผ่าน
-      console.log("Validation passed, API response pending.");
-    }
   }
 
   return (
