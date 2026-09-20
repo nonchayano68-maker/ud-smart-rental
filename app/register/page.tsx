@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,10 +13,10 @@ export default function RegisterPage() {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-
     setMessage("");
     setError("");
 
@@ -24,110 +26,111 @@ export default function RegisterPage() {
       return;
     }
 
-    // กรณีที่ 2: เช็กรหัสผ่านน้อยกว่า 8 ตัว
-    if (password.length < 8) {
-      setError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
-      return;
-    }
-
-    // กรณีที่ 3: เช็กรหัสผ่านไม่ตรงกัน
+    // กรณีที่ 2: เช็กการยืนยันรหัสผ่าน
     if (password !== confirmPassword) {
       setError("รหัสผ่านไม่ตรงกัน");
       return;
     }
 
-    // กรณีที่ 4: ข้อมูลถูกต้องทั้งหมด
-    setMessage("ข้อมูลถูกต้อง สามารถส่งไปยัง API ได้แล้ว");
+    // กรณีที่ 3: เช็กรหัสผ่านน้อยกว่า 8 ตัว
+    if (password.length < 8) {
+      setError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // เรียก API Register ตามโจทย์ข้อ 13
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "สมัครสมาชิกไม่สำเร็จ");
+        return;
+      }
+
+      setMessage("สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ");
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setError("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <main
-      style={{
-        maxWidth: "400px",
-        margin: "50px auto",
-      }}
-    >
+    <main style={{ maxWidth: "400px", margin: "50px auto", padding: "20px" }}>
       <h1>สมัครสมาชิก</h1>
 
-      <form onSubmit={handleSubmit}>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {message && <p style={{ color: "green" }}>{message}</p>}
+
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         <div>
-          <label>ชื่อ</label>
-          <br />
+          <label>ชื่อ-นามสกุล:</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="กรอกชื่อ"
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "100%", padding: "8px" }}
           />
         </div>
 
-        <br />
-
         <div>
-          <label>Email</label>
-          <br />
+          <label>Email:</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@email.com"
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "100%", padding: "8px" }}
           />
         </div>
 
-        <br />
-
         <div>
-          <label>Password</label>
-          <br />
+          <label>Password (อย่างน้อย 8 ตัวอักษร):</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="อย่างน้อย 8 ตัวอักษร"
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "100%", padding: "8px" }}
           />
         </div>
 
-        <br />
-
         <div>
-          <label>Confirm Password</label>
-          <br />
+          <label>Confirm Password:</label>
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="กรอกรหัสผ่านอีกครั้ง"
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "100%", padding: "8px" }}
           />
         </div>
 
-        <br />
-
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        {message && <p style={{ color: "green" }}>{message}</p>}
-
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            padding: "10px",
-            backgroundColor: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          สมัครสมาชิก
+        <button type="submit" disabled={loading} style={{ padding: "10px", marginTop: "10px", cursor: "pointer" }}>
+          {loading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
         </button>
       </form>
 
       <br />
-
-      <Link href="/login">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</Link>
+      <p>
+        มีบัญชีอยู่แล้ว? <Link href="/login">เข้าสู่ระบบที่นี่</Link>
+      </p>
     </main>
   );
 }
